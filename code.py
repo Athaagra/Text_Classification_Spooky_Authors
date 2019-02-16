@@ -12,10 +12,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score,classification_report
+from sklearn.metrics import accuracy_score,classification_report,roc_curve, auc
 from sklearn import svm
 from sklearn import linear_model
 from sklearn import ensemble
+from sklearn.preprocessing import label_binarize
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Read the data into a data frame
 def getData(path):
@@ -35,13 +38,17 @@ def getUniqueAuthors(data):
 # Plot initial data as bar graph.
 def plotInitialData(data):
     data.author.value_counts().plot(kind='bar', rot=0)
+    plt.savefig('spooky.png')
     plt.show()
+plotInitialData(data)
 
 # Encode the authots 'EAP': 0, 'HPL': 1, 'MWS': 2
 def encodeAuthors(data):
     data['author'] = data['author'].map({'EAP': 0, 'HPL': 1, 'MWS': 2})
     encoded_data = data
     return encoded_data
+
+
 
 # Split the data to a train set and a test set
 def splitData(x, labels):
@@ -129,18 +136,16 @@ def RandomForest(x_train, y_train, x_test,
     prediction = model.predict(x_test)
     return(prediction)
 
-data = getData('train.csv')
-plot = plotInitialData(data)
 
+data = getData('train.csv')
+#plot = plotInitialData()
+x = groupbyAuthor(data)
 analyzer = CountVectorizer().build_analyzer()
 stemmer = nltk.stem.PorterStemmer()
 
 encoded_data = encodeAuthors(data)
 tf_matrix = countVec(encoded_data['text'])
 tfidf_matrix = tfidfTransform(tf_matrix)
-
-x_train_tf, x_test_tf, y_train, y_test = splitData(tf_matrix, encoded_data['author'])
-x_train_tfidf, x_test_tfidf, _, _= splitData(tfidf_matrix, encoded_data['author'])
 
 print("Example!")
 print(np.shape(x_train_tfidf))
@@ -195,3 +200,26 @@ RF_predict = RandomForest(x_train_tfidf, y_train, x_test_tfidf,
 print("Accuracy on the test set Random Forest",round(accuracy_score(y_test, RF_predict)*100,2))
 print(classification_report(y_test, RF_predict))
 print("It took", round(time.time()-t, 2), "seconds.")
+
+false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, MNB_predict_test)
+
+
+
+
+
+
+
+
+fpr,tpr, thresholds = roc_curve(y_train,MNB_predict_train)
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr, tpr, linewidth=2, label=label)
+    plt.plot([0,1],[0,1], 'k--')
+    plt.axtis([0, 1, 0, 1])
+    plt.xlabel('false Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve')
+
+plt.figure(figsize=(12,8))
+
+
+
